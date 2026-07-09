@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { DOC_TYPES } from '../util.js'
+import { DOC_TYPES, documentNumberError, exampleNumber } from '../util.js'
 
 export default function UploadTab({ disabled }) {
   const [documentNumber, setDocumentNumber] = useState('')
@@ -39,14 +39,19 @@ export default function UploadTab({ disabled }) {
 
   const removeFile = (path) => setFiles((prev) => prev.filter((f) => f.path !== path))
 
+  const docError = documentNumberError(documentType, documentNumber)
+
   const upload = async () => {
-    if (!documentNumber.trim() || files.length === 0) return
+    if (docError || files.length === 0) {
+      if (docError) setError(docError)
+      return
+    }
     setBusy(true)
     setResults(null)
     setError(null)
     try {
       const res = await window.api.uploadAttachments({
-        documentNumber,
+        documentNumber: documentNumber.trim().toUpperCase(),
         documentType,
         description: description.trim() || undefined,
         files
@@ -77,13 +82,18 @@ export default function UploadTab({ disabled }) {
             </select>
           </div>
           <div className="field">
-            <label>Document Number</label>
+            <label>Order/Quote Number</label>
             <input
               value={documentNumber}
               onChange={(e) => setDocumentNumber(e.target.value)}
-              placeholder="e.g. 12345"
+              placeholder={`e.g. ${exampleNumber(documentType)}`}
               disabled={disabled}
             />
+            {documentNumber.trim() && docError && (
+              <span className="hint" style={{ color: 'var(--danger)' }}>
+                {docError}
+              </span>
+            )}
           </div>
         </div>
 
@@ -120,7 +130,7 @@ export default function UploadTab({ disabled }) {
         )}
 
         <div className="row" style={{ justifyContent: 'flex-end', marginTop: 16 }}>
-          <button className="btn" onClick={upload} disabled={disabled || busy || !documentNumber.trim() || files.length === 0}>
+          <button className="btn" onClick={upload} disabled={disabled || busy || !!docError || files.length === 0}>
             {busy ? <span className="spinner" /> : `Upload ${files.length || ''} file${files.length === 1 ? '' : 's'}`.trim()}
           </button>
         </div>

@@ -1,5 +1,24 @@
 export const DOC_TYPES = ['Order', 'Quote']
 
+// Required prefix for each document type: 2 letters + 6 digits.
+export const DOC_PREFIX = { Order: 'CG', Quote: 'ES' }
+
+export const exampleNumber = (documentType) => `${DOC_PREFIX[documentType] || 'XX'}123456`
+
+// Returns an error message if the number is invalid for the given type, else null.
+export function documentNumberError(documentType, value) {
+  const v = (value || '').trim().toUpperCase()
+  if (!v) return 'Please enter an order/quote number.'
+  const prefix = DOC_PREFIX[documentType]
+  const pattern = prefix ? new RegExp(`^${prefix}\\d{6}$`) : /^[A-Z]{2}\d{6}$/
+  if (!pattern.test(v)) {
+    return prefix
+      ? `${documentType} numbers must be "${prefix}" followed by 6 digits (e.g. ${prefix}123456).`
+      : 'Number must be 2 letters followed by 6 digits.'
+  }
+  return null
+}
+
 const MIME = {
   pdf: 'application/pdf',
   png: 'image/png',

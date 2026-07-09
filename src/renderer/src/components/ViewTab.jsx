@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { DOC_TYPES, canPreview, isPdf, formatSize, suggestedName, mimeFor } from '../util.js'
+import { DOC_TYPES, canPreview, isPdf, formatSize, suggestedName, mimeFor, exampleNumber } from '../util.js'
 
 export default function ViewTab({ disabled }) {
   const [documentNumber, setDocumentNumber] = useState('')
@@ -18,7 +18,7 @@ export default function ViewTab({ disabled }) {
     setAttachments(null)
     try {
       const result = await window.api.listAttachments({
-        documentNumber,
+        documentNumber: documentNumber.trim().toUpperCase(),
         documentType
       })
       setAttachments(result)
@@ -82,12 +82,12 @@ export default function ViewTab({ disabled }) {
             </select>
           </div>
           <div className="field" style={{ flex: 1 }}>
-            <label>Document Number</label>
+            <label>Order/Quote Number</label>
             <input
               value={documentNumber}
               onChange={(e) => setDocumentNumber(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && search()}
-              placeholder="e.g. 12345"
+              placeholder={`e.g. ${exampleNumber(documentType)}`}
               disabled={disabled}
               style={{ width: '100%' }}
             />
