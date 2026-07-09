@@ -1,0 +1,8 @@
+node_modules
+out
+dist
+*.log
+.DS_Store
+
+# Contains the shared RFMS username/API key once filled in.
+src/main/default-credentials.js
