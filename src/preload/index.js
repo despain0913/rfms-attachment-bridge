@@ -1,6 +1,8 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 const api = {
+  settingsPasswordRequired: () => ipcRenderer.invoke('settings:passwordRequired'),
+  verifySettingsPassword: (pw) => ipcRenderer.invoke('settings:verifyPassword', pw),
   getSettings: () => ipcRenderer.invoke('settings:get'),
   saveSettings: (settings) => ipcRenderer.invoke('settings:save', settings),
   testConnection: () => ipcRenderer.invoke('rfms:test'),

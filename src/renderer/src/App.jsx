@@ -2,11 +2,13 @@ import React, { useEffect, useState } from 'react'
 import ViewTab from './components/ViewTab.jsx'
 import UploadTab from './components/UploadTab.jsx'
 import Settings from './components/Settings.jsx'
+import PasswordPrompt from './components/PasswordPrompt.jsx'
 
 export default function App() {
   const [tab, setTab] = useState('view')
   const [settings, setSettings] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
+  const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
 
   const refreshSettings = async () => {
     const s = await window.api.getSettings()
@@ -20,6 +22,13 @@ export default function App() {
       if (!s.username || !s.hasApiKey) setShowSettings(true)
     })
   }, [])
+
+  // Prompt for the password (if one is set) before opening Settings.
+  const requestSettings = async () => {
+    const required = await window.api.settingsPasswordRequired()
+    if (required) setShowPasswordPrompt(true)
+    else setShowSettings(true)
+  }
 
   const configured = settings && settings.username && settings.hasApiKey
 
@@ -37,7 +46,7 @@ export default function App() {
             <p>View, download &amp; upload job attachments</p>
           </div>
         </div>
-        <button className="icon-btn" onClick={() => setShowSettings(true)}>
+        <button className="icon-btn" onClick={requestSettings}>
           ⚙ Settings
         </button>
       </div>
@@ -59,6 +68,16 @@ export default function App() {
         )}
         {tab === 'view' ? <ViewTab disabled={!configured} /> : <UploadTab disabled={!configured} />}
       </div>
+
+      {showPasswordPrompt && (
+        <PasswordPrompt
+          onClose={() => setShowPasswordPrompt(false)}
+          onUnlock={() => {
+            setShowPasswordPrompt(false)
+            setShowSettings(true)
+          }}
+        />
+      )}
 
       {showSettings && (
         <Settings

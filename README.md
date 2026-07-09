@@ -29,12 +29,18 @@ Then fill in the shared company RFMS credentials in
 export const DEFAULT_USERNAME = 'your-rfms-username'
 export const DEFAULT_API_KEY = 'your-rfms-api-key'
 export const DEFAULT_BASE_URL = 'https://api.rfms.online'
+export const SETTINGS_PASSWORD = 'weber' // password to open the Settings screen
 ```
 
 This file is gitignored — it's meant to be edited locally on the build machine, not
 committed or shared. Every installer you build from this point on ships with these
 credentials baked in, so end users never see a login screen or need to configure
 anything.
+
+`SETTINGS_PASSWORD` guards the Settings screen so users can't accidentally change
+the store credentials or API key — they must enter it before Settings will open.
+Set it to `''` to disable the prompt. The password is verified in the main process
+and is never included in the renderer bundle.
 
 ## Run in development
 
