@@ -56,6 +56,47 @@ npm run build:win
 
 The installer is written to `dist/` as `RFMS Attachment Bridge-Setup-<version>.exe`.
 
+## Versioning & releasing a new version
+
+This project uses [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`)
+and keeps a [CHANGELOG.md](CHANGELOG.md). The version number lives in
+[`package.json`](package.json) (`"version"`) and is what the installer, the app's
+title bar, and the update check all report.
+
+To cut a release:
+
+1. Update `"version"` in `package.json` (e.g. `1.0.0` → `1.1.0`).
+2. Add a section to `CHANGELOG.md` describing what changed.
+3. Run `npm run build:win` — the installer is named with the new version.
+4. Copy the new installer to your distribution location (network share / intranet).
+5. Update the `latest.json` manifest there (see below) so existing installs are
+   notified.
+
+## Update check
+
+On startup the app reads its own version and compares it to a small JSON manifest
+you host. If the manifest's version is newer, users see a banner with a **Download**
+button. This is **opt-in** and off by default.
+
+To turn it on, set `UPDATE_MANIFEST_URL` in
+[`src/main/update-config.js`](src/main/update-config.js) to either an HTTPS URL or a
+network-share path pointing at a JSON file shaped like
+[`latest.json.example`](latest.json.example):
+
+```json
+{
+  "version": "1.1.0",
+  "url": "\\\\fileserver\\apps\\RFMS Attachment Bridge\\RFMS Attachment Bridge-Setup-1.1.0.exe",
+  "notes": "What changed in this release."
+}
+```
+
+Host `latest.json` (and the installer it points to) at your distribution location.
+Each release, bump the manifest's `version`, `url`, and `notes`. When `url` is an
+HTTPS link the Download button opens it in the browser; when it's a file/UNC path
+it reveals the installer in Explorer so the user can run it. A failed or unreachable
+manifest is ignored silently — it never disrupts the app.
+
 ## Credentials
 
 The app ships with the company's RFMS username/API key baked in via

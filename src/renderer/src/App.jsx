@@ -9,6 +9,8 @@ export default function App() {
   const [settings, setSettings] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
   const [showPasswordPrompt, setShowPasswordPrompt] = useState(false)
+  const [update, setUpdate] = useState(null)
+  const [updateDismissed, setUpdateDismissed] = useState(false)
 
   const refreshSettings = async () => {
     const s = await window.api.getSettings()
@@ -21,6 +23,8 @@ export default function App() {
       // First run with nothing configured: open Settings automatically.
       if (!s.username || !s.hasApiKey) setShowSettings(true)
     })
+    // Check for a newer version in the background (never blocks the UI).
+    window.api.checkForUpdate().then(setUpdate)
   }, [])
 
   // Prompt for the password (if one is set) before opening Settings.
@@ -43,7 +47,10 @@ export default function App() {
           </div>
           <div>
             <h1>RFMS Attachment Bridge</h1>
-            <p>View, download &amp; upload job attachments</p>
+            <p>
+              View, download &amp; upload job attachments
+              {update?.current ? ` · v${update.current}` : ''}
+            </p>
           </div>
         </div>
         <button className="icon-btn" onClick={requestSettings}>
@@ -61,6 +68,24 @@ export default function App() {
       </div>
 
       <div className="content">
+        {update?.available && !updateDismissed && (
+          <div className="banner info update-banner">
+            <div>
+              <strong>A newer version is available (v{update.latest}).</strong>
+              {update.notes ? <div style={{ marginTop: 4 }}>{update.notes}</div> : null}
+            </div>
+            <div className="update-actions">
+              {update.url && (
+                <button className="btn small" onClick={() => window.api.openDownload(update.url)}>
+                  ⬇ Download
+                </button>
+              )}
+              <button className="btn secondary small" onClick={() => setUpdateDismissed(true)}>
+                Dismiss
+              </button>
+            </div>
+          </div>
+        )}
         {!configured && (
           <div className="banner info">
             RFMS credentials aren&apos;t set up yet. Click <strong>Settings</strong> to enter your username and API key.
