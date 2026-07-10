@@ -1,6 +1,6 @@
 {
   "name": "rfms-attachment-bridge",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Download and upload RFMS Cloud job attachments from your PC",
   "main": "./out/main/index.js",
   "author": "Weber Flooring",

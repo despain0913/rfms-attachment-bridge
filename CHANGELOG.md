@@ -11,6 +11,19 @@ and this project uses [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.P
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-07-10
+
+### Changed
+- Installer now installs machine-wide (Program Files, all users) instead of
+  per-user. Required so the app can be silently deployed/updated by an RMM
+  tool running as SYSTEM — a per-user install run as SYSTEM would land in
+  SYSTEM's own profile instead of the actual user's.
+
+### Added
+- `scripts/tacticalrmm-deploy.ps1` — silent install/update script for
+  TacticalRMM (or any script-based RMM), driven by the same `latest.json`
+  manifest used for the in-app update check.
+
 ## [1.0.0] - 2026-07-10
 
 ### Added

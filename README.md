@@ -97,6 +97,50 @@ HTTPS link the Download button opens it in the browser; when it's a file/UNC pat
 it reveals the installer in Explorer so the user can run it. A failed or unreachable
 manifest is ignored silently — it never disrupts the app.
 
+## Silent deployment & auto-update via TacticalRMM
+
+The installer is a **machine-wide** install (`perMachine: true` in
+`electron-builder.yml`) — it installs to Program Files and is visible to every user
+on the PC. This matters because TacticalRMM agents run as `SYSTEM`: a per-user
+installer run as SYSTEM would land in SYSTEM's own profile, invisible to whoever
+actually uses the computer. Machine-wide + SYSTEM (which already has admin rights)
+is the combination that works.
+
+[`scripts/tacticalrmm-deploy.ps1`](scripts/tacticalrmm-deploy.ps1) reads the same
+`latest.json` manifest described above, compares it to whatever's installed
+(via the machine's uninstall registry key), and — only if newer — silently
+downloads and installs it (`/S`). Run repeatedly (e.g. daily), it's a no-op once
+a machine is current, so the same task handles both first-time rollout and every
+future update with no per-release script changes; you only ever touch `latest.json`.
+
+**Setup in TacticalRMM:**
+
+1. Host `latest.json` and the installer `.exe` somewhere every target PC can reach
+   — an internal HTTPS URL or a UNC network share both work (script supports both).
+2. In TacticalRMM: **Settings → Script Manager → Add Script**. Paste in
+   `tacticalrmm-deploy.ps1`, type **PowerShell**, category e.g. "Software Deployment".
+3. Create an **Automated Task** (or a Policy check) assigned to the relevant
+   client/site:
+   - Script: the one you just added
+   - Script argument: `-ManifestPath "https://your-host/rfms/latest.json"`
+     (or a `\\server\share\...\latest.json` path)
+   - Schedule: e.g. daily — cheap to run since it exits immediately when already
+     up to date
+   - **Timeout: increase it** (the installer is ~80 MB; the default script
+     timeout is too short) — 300–600 seconds is safe
+   - Run as: the default **SYSTEM** context is fine — no need for "run as logged
+     on user"
+4. The script exits `0` on success/no-op and `1` on failure, so TacticalRMM's
+   normal pass/fail check and alerting works out of the box.
+
+**Each release**, after `npm run build:win`: copy the new installer to your hosting
+location and update `latest.json`'s `version`/`url`/`notes` — the RMM task and the
+in-app update banner (if enabled) both pick it up automatically.
+
+Because the installer isn't code-signed, the script runs `Unblock-File` on the
+downloaded copy before executing it, so a silent SYSTEM-context install won't be
+held up by SmartScreen's mark-of-the-web check.
+
 ## Credentials
 
 The app ships with the company's RFMS username/API key baked in via
