@@ -55,91 +55,8 @@ npm run build:win
 ```
 
 The installer is written to `dist/` as `RFMS Attachment Bridge-Setup-<version>.exe`.
-
-## Versioning & releasing a new version
-
-This project uses [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PATCH`)
-and keeps a [CHANGELOG.md](CHANGELOG.md). The version number lives in
-[`package.json`](package.json) (`"version"`) and is what the installer, the app's
-title bar, and the update check all report.
-
-To cut a release:
-
-1. Update `"version"` in `package.json` (e.g. `1.0.0` → `1.1.0`).
-2. Add a section to `CHANGELOG.md` describing what changed.
-3. Run `npm run build:win` — the installer is named with the new version.
-4. Copy the new installer to your distribution location (network share / intranet).
-5. Update the `latest.json` manifest there (see below) so existing installs are
-   notified.
-
-## Update check
-
-On startup the app reads its own version and compares it to a small JSON manifest
-you host. If the manifest's version is newer, users see a banner with a **Download**
-button. This is **opt-in** and off by default.
-
-To turn it on, set `UPDATE_MANIFEST_URL` in
-[`src/main/update-config.js`](src/main/update-config.js) to either an HTTPS URL or a
-network-share path pointing at a JSON file shaped like
-[`latest.json.example`](latest.json.example):
-
-```json
-{
-  "version": "1.1.0",
-  "url": "\\\\fileserver\\apps\\RFMS Attachment Bridge\\RFMS Attachment Bridge-Setup-1.1.0.exe",
-  "notes": "What changed in this release."
-}
-```
-
-Host `latest.json` (and the installer it points to) at your distribution location.
-Each release, bump the manifest's `version`, `url`, and `notes`. When `url` is an
-HTTPS link the Download button opens it in the browser; when it's a file/UNC path
-it reveals the installer in Explorer so the user can run it. A failed or unreachable
-manifest is ignored silently — it never disrupts the app.
-
-## Silent deployment & auto-update via TacticalRMM
-
-The installer is a **machine-wide** install (`perMachine: true` in
-`electron-builder.yml`) — it installs to Program Files and is visible to every user
-on the PC. This matters because TacticalRMM agents run as `SYSTEM`: a per-user
-installer run as SYSTEM would land in SYSTEM's own profile, invisible to whoever
-actually uses the computer. Machine-wide + SYSTEM (which already has admin rights)
-is the combination that works.
-
-[`scripts/tacticalrmm-deploy.ps1`](scripts/tacticalrmm-deploy.ps1) reads the same
-`latest.json` manifest described above, compares it to whatever's installed
-(via the machine's uninstall registry key), and — only if newer — silently
-downloads and installs it (`/S`). Run repeatedly (e.g. daily), it's a no-op once
-a machine is current, so the same task handles both first-time rollout and every
-future update with no per-release script changes; you only ever touch `latest.json`.
-
-**Setup in TacticalRMM:**
-
-1. Host `latest.json` and the installer `.exe` somewhere every target PC can reach
-   — an internal HTTPS URL or a UNC network share both work (script supports both).
-2. In TacticalRMM: **Settings → Script Manager → Add Script**. Paste in
-   `tacticalrmm-deploy.ps1`, type **PowerShell**, category e.g. "Software Deployment".
-3. Create an **Automated Task** (or a Policy check) assigned to the relevant
-   client/site:
-   - Script: the one you just added
-   - Script argument: `-ManifestPath "https://your-host/rfms/latest.json"`
-     (or a `\\server\share\...\latest.json` path)
-   - Schedule: e.g. daily — cheap to run since it exits immediately when already
-     up to date
-   - **Timeout: increase it** (the installer is ~80 MB; the default script
-     timeout is too short) — 300–600 seconds is safe
-   - Run as: the default **SYSTEM** context is fine — no need for "run as logged
-     on user"
-4. The script exits `0` on success/no-op and `1` on failure, so TacticalRMM's
-   normal pass/fail check and alerting works out of the box.
-
-**Each release**, after `npm run build:win`: copy the new installer to your hosting
-location and update `latest.json`'s `version`/`url`/`notes` — the RMM task and the
-in-app update banner (if enabled) both pick it up automatically.
-
-Because the installer isn't code-signed, the script runs `Unblock-File` on the
-downloaded copy before executing it, so a silent SYSTEM-context install won't be
-held up by SmartScreen's mark-of-the-web check.
+It's a **per-user** install (no admin rights required) — users double-click it
+themselves to install or to pick up a new version; there's no auto-update.
 
 ## Credentials
 
@@ -153,7 +70,7 @@ protection (Electron `safeStorage` / DPAPI) and overrides the built-in defaults 
 that machine only. Use **Test Connection** to verify credentials before saving.
 
 If you rotate the API key, update `default-credentials.js` and rebuild/redistribute
-the installer — there's no remote update mechanism.
+the installer to users.
 
 ## How it works (for maintainers)
 

@@ -1,8 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron'
 
 const api = {
-  checkForUpdate: () => ipcRenderer.invoke('update:check'),
-  openDownload: (url) => ipcRenderer.invoke('update:openDownload', url),
   settingsPasswordRequired: () => ipcRenderer.invoke('settings:passwordRequired'),
   verifySettingsPassword: (pw) => ipcRenderer.invoke('settings:verifyPassword', pw),
   getSettings: () => ipcRenderer.invoke('settings:get'),
